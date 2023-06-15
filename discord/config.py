@@ -1,4 +1,4 @@
-authorization = "MTExNTgzNjAwNTc1NzQ5NzM0Ng.GSl0TX.iHFcayoEC3wF3C1Os9WpMsOSLRYNDi-QrgoXNU"
+authorization = "MTExNTgzNjAwNTc1NzQ5NzM0Ng.GJrU4d.v7jE4bcCmR9a_qruEYhM5URYx0WREasOqJRtAw"
 application_id = "936929561302675456"
 guild_id = "1116559345858121780"
 channel_id = "1116559346600521780"

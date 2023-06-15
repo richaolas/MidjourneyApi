@@ -36,6 +36,7 @@ discord_obj = DiscordMessage(channel_id, authorization)
 
 
 def gen_prompt(image):
+    midjourney.reset_generate_status()
     prompt = "{} simple avatar, pixar, 3d rendering, 3D character from Disney Pixar Animation, --s 500 --iw 1.5 --quality 0.5 --aspect 1:1"
     ret, mess_id, image_url = discord_obj.upload_image(image)
     return ret, prompt.format(image_url)

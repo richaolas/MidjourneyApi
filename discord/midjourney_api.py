@@ -297,6 +297,10 @@ class MidjourneyApi:
     def get_generate_status(self):
         return self.generate_status, self.generate_image_path
 
+    def reset_generate_status(self):
+        self.generate_status = 'idle'
+        self.generate_image_path = ''
+        return self.generate_status, self.generate_image_path
 
 class InsightFaceApi:
 
