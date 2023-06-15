@@ -275,21 +275,25 @@ class MidjourneyApi:
                 start_time = time.time()
                 start_flag = False
 
-            self.generate_status = self.midjourney_imagine_status(message_id)
-            if self.generate_status == 'done':
+            generate_status = self.midjourney_imagine_status(message_id)
+            if generate_status == 'done':
                 break
-            elif self.generate_status == "start":
+            elif generate_status == "start":
                 print("[midjourney] start process ", time.time() - start_time)
                 start_flag = True
                 # global_processing_image = src_path = midjourney.get_message_image(message_id)
+                self.generate_status = generate_status
                 self.generate_image_path = self.get_message_image(message_id)
                 print(f"[midjourney] generate {self.generate_image_path}")
             elif self.generate_status == "wait":
+                self.generate_status = generate_status
                 print("[midjourney] waiting for ", time.time() - start_time)
                 time.sleep(1)
 
         print("[midjourney] midjourney during: ", time.time() - start_time)
         result_image_path = self.get_generate_4result()
+        self.generate_status = 'done'
+        self.generate_image_path = result_image_path
         print(result_image_path)
 
         return result_image_path
