@@ -92,11 +92,13 @@ class MidjourneyApi:
         }
         for i in range(10):
             try:
+                idx = prompt.index(' ')
+                sub_prompt = prompt[idx:]
                 response = requests.get(f'https://discord.com/api/v9/channels/{self.channel_id}/messages?limit=1',
                                         headers=headers)
                 if response.status_code == 200:
                     messages = response.json()
-                    if len(messages) > 0 and messages[0]["content"].index(prompt) >= 0:
+                    if len(messages) > 0 and messages[0]["content"].index(sub_prompt) >= 0:
                         return messages[0]['id']
                         break
             except:
@@ -148,7 +150,7 @@ class MidjourneyApi:
             with open(self.image_path_str, "wb") as file:
                 file.write(image_response.content)
             return self.image_path_str
-        return None
+        return ""
 
     """
     get last 4 images
