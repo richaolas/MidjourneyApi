@@ -1,6 +1,14 @@
 # MidjourneyApi
 use discord and Midjourney imagine command and swapface mode to get a cartoon IP
 
+## set discord authorization and pay_load
+1. open url: https://discord.com/ and login
+2. send a command to midjourney bot: fom example, `/imagine prompt amazing`
+3. copy response Header: Authorization, Payload: payload_json, paste to discord/config.py
+4. then run main.py, you can get a 3d rendering cartoon charactor in images folder.
+
+![1688976623472](image/README/1688976623472.png)
+
 source image:
 ![1686800196762](image/README/1686800196762.png)
 
