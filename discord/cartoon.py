@@ -4,6 +4,7 @@ import cv2
 import time
 from discord.discord_api import DiscordMessage
 from discord.config import *
+from discord.face_detect import baidu_face_detect
 
 
 def cuts(image_path, idx=1):
@@ -34,26 +35,53 @@ midjourney = MidjourneyApi(application_id=application_id, guild_id=guild_id,
 
 discord_obj = DiscordMessage(channel_id, authorization)
 
+def gen_ex_prompt(json):
+    pass
 
-def gen_prompt(image):
+
+def gen_prompt(image, ext=""):
     midjourney.reset_generate_status()
-    prompt = "{} simple avatar, pixar, 3d rendering, 3D character from Disney Pixar Animation, --s 500 --iw 1.5 --quality 0.5 --aspect 1:1"
+    prompt = "{}" + " " + ext + ", simple avatar, pixar, 3d rendering, 3D character from Disney Pixar Animation, --s 500 --iw 2.0 --quality 0.5 --aspect 1:1"
     ret, mess_id, image_url = discord_obj.upload_image(image)
     return ret, prompt.format(image_url)
 
 
+def get_promote_ex(face):
+    age = int(face['age'])
+    expression = face['expression']['type']
+    face_shape = face['face_shape']['type']
+    gender = face['gender']['type']
+
+    glasses = "none"
+    if 'glasses' in face:
+        glasses = face['glasses']['type']
+
+    promote = f'a {age}-year-old {gender} with {expression} expression, {face_shape} face shape'
+    if glasses != "none":
+        promote += ', with glasses'
+    else:
+        promote += ', without glasses'
+
+    return promote
+
 def cartoon(photo):
     # return photo
     beg = time.time()
-    ret, prompt_cmd = gen_prompt(photo)
-    print(prompt_cmd)
-    image = midjourney.midjourney_imagine(prompt_cmd)
-    cuts_image_path = cuts(image)
-    ret, imgname = discord.face.swap_face(cuts_image_path, photo)
+
+    face = baidu_face_detect(photo)
+    prompt_cmd_ex = ""
+    if face:
+        prompt_cmd_ex = get_promote_ex(face)
+
+    ret, prompt_cmd = gen_prompt(photo, prompt_cmd_ex)
+    # print(prompt_cmd)
+    image = midjourney.midjourney_imagine(prompt_cmd, timeout_resend=timeout_resend)
+    # cuts_image_path = cuts(image)
+    #ret, imgname = discord.face.swap_face(cuts_image_path, photo)
     # end = time.time()
     # cost = end - beg
     # print(f'cost : {cost} second')
-    return imgname
+    return image
 
 
 def get_generate_status():
