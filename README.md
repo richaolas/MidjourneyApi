@@ -1,5 +1,5 @@
 # MidjourneyApi
-use discord and Midjourney imagine command and swapface mode to get a cartoon IP
+Use discord API and Midjourney imagine command with swapface optional to get a cartoon IP.
 
 ## set discord authorization and pay_load
 1. open url: https://discord.com/ and login

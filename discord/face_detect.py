@@ -67,7 +67,11 @@ def baidu_face_detect(image_path):
     face_res = client.detect(image_code, "BASE64",
                              options={'face_field': "age,expression,face_shape,gender,glasses", 'max_face_num': "10"})
 
-    if not face_res['result']:
+    if not face_res:
+        print("=======face no detect==========")
+        return None
+    if 'result' in face_res and not face_res['result']:
+        print("=======face no detect==========")
         return None
 
     face_list = face_res['result']['face_list']
@@ -82,7 +86,7 @@ def baidu_face_detect(image_path):
         box = [left, top, left + width, top + height]
         iou = cal_iou(box, percent_50_box)
         if iou > max_face_iou:
-            max_face_iou=iou
+            max_face_iou = iou
             max_face_index = i
     face_info = face_list[max_face_index]
     # draw(image, face_info, percent_50_box)

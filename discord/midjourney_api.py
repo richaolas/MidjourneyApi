@@ -9,6 +9,7 @@ import requests
 import shutil
 import os
 
+
 class MidjourneyApi:
 
     def __init__(self, application_id, guild_id, channel_id, version, id, authorization):
@@ -18,7 +19,7 @@ class MidjourneyApi:
         self.version = version
         self.id = id
         self.authorization = authorization
-        #self.prompt = prompt
+        # self.prompt = prompt
         self.message_id = ""
         self.custom_id = ""
         self.image_path_str = ""
@@ -27,6 +28,9 @@ class MidjourneyApi:
 
         self.generate_status = ""  # idle, wait, start, done
         self.generate_image_path = ""
+        self.save_image_path = "images"
+
+        self.last_done_timestamp = None
 
         # beg = time.time()
         # self.send_message()
@@ -106,14 +110,33 @@ class MidjourneyApi:
                 ValueError("Timeout")
         return ""
 
+    def get_message_timestamp(self, message):
+        print(message["timestamp"], message["timestamp"][:-6])
+        return time.strptime(message["timestamp"][:-6], "%Y-%m-%dT%H:%M:%S.%f")
+
+    def get_last_message(self):
+        headers = {
+            'Authorization': self.authorization,
+            "Content-Type": "application/json",
+        }
+        response = requests.get(f'https://discord.com/api/v9/channels/{self.channel_id}/messages?limit=10',
+                                headers=headers)
+        if response.status_code != 200:
+            return False
+        messages = response.json()
+        if messages:
+            return messages[0]
+        return None
+
     def get_message_by_id(self, message_id):
         headers = {
             'Authorization': self.authorization,
             "Content-Type": "application/json",
         }
-        response = requests.get(f'https://discord.com/api/v9/channels/{self.channel_id}/messages',
+        response = requests.get(f'https://discord.com/api/v9/channels/{self.channel_id}/messages?limit=10',
                                 headers=headers)
         if response.status_code != 200:
+            print(f"[midjourney] response.status_code != 200 : {response.status_code}")
             return False
         messages = response.json()
 
@@ -127,8 +150,23 @@ class MidjourneyApi:
 
     def midjourney_imagine_status(self, message_id):
         message = self.get_message_by_id(message_id)
+        # 如果原始消息没有了，说明生成完毕,
         if not message:  # 说明生成完毕
+            print("[midjourney] promote message is update to result message.")
             return "done"
+
+        # 或者，如果最新的消息 id，不等于原来的消息id，也生成完毕
+        last_message = self.get_last_message()
+        cur_timestamp = self.get_message_timestamp(last_message)
+
+        if last_message and last_message["id"] != message_id:
+            if 'attachments' in last_message.keys() and len(last_message['attachments']) > 0:
+                # 必须要求这个时间比上一次生成的时间晚，不然就是同一个消息了
+                if not self.last_done_timestamp or (self.last_done_timestamp and cur_timestamp > self.last_done_timestamp):
+                    print(
+                        f"[midjourney] last message is 4 result image, but the src promote message still exist.{message_id}-{last_message['id']}")
+                    return "done"
+
         # print(message, type(message), dir(message))
         if 'attachments' in message.keys() and len(message['attachments']) > 0:
             return "start"
@@ -137,6 +175,7 @@ class MidjourneyApi:
     """
     get processing image, get image by message id
     """
+
     def get_message_image(self, message_id):
         message = self.get_message_by_id(message_id)
         # print(message, type(message), dir(message))
@@ -146,7 +185,10 @@ class MidjourneyApi:
             a = urlparse(image_url)
             image_name = os.path.basename(a.path)
             time_stamp = time.time()
-            self.image_path_str = f"images/{time_stamp}_{image_name}"
+
+            self.image_path_str = f"{self.save_image_path}/{time_stamp}_{image_name}"
+            if not os.path.exists(self.save_image_path):
+                os.makedirs(self.save_image_path)
             with open(self.image_path_str, "wb") as file:
                 file.write(image_response.content)
             return self.image_path_str
@@ -155,6 +197,7 @@ class MidjourneyApi:
     """
     get last 4 images
     """
+
     def get_generate_4result(self):
         headers = {
             'Authorization': self.authorization,
@@ -165,6 +208,9 @@ class MidjourneyApi:
                                     headers=headers)
             messages = response.json()
             message = messages[0]
+
+            self.last_done_timestamp = self.get_message_timestamp(message)  # time.strptime(message["timestamp"][-6], "%Y-%m-%dT%H:%M:%S.%f")
+
             if 'attachments' in message.keys() and len(message['attachments']) > 0:
                 image_url = message['attachments'][0]['url']
                 image_response = requests.get(image_url)
@@ -255,9 +301,9 @@ class MidjourneyApi:
         return self.image_path_str
 
     def midjourney_imagine(self, prompt, timeout_resend=40):
-        #midjourney = MidjourneyApi(prompt=prompt_cmd, application_id=application_id, guild_id=guild_id,
+        # midjourney = MidjourneyApi(prompt=prompt_cmd, application_id=application_id, guild_id=guild_id,
         #                           channel_id=channel_id, version=version, id=id, authorization=authorization)
-        #global global_processing_image
+        # global global_processing_image
         beg = time.time()
         message_id = ""
         while message_id == "":
@@ -308,6 +354,7 @@ class MidjourneyApi:
         self.generate_image_path = ''
         return self.generate_status, self.generate_image_path
 
+
 class InsightFaceApi:
 
     def __init__(self, prompt, application_id, guild_id, channel_id, version, id, authorization):
@@ -357,3 +404,10 @@ class InsightFaceApi:
             },
         }
         response = requests.post(url, headers=headers, data=json.dumps(data))
+
+
+if __name__ == '__main__':
+    pass
+    # p = "https://s.mj.run/Ueo8RdCYi3s simple avatar, pixar, 3d rendering, 3D character from Disney Pixar Animation, --s 500 --iw 2.0 --quality 0.5 --aspect 1:1"
+    # idx = p.index(' ')
+    # print(p[idx:])
